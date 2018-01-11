@@ -102,9 +102,10 @@ class TableroController extends Controller
         //     \DB::select("insert into dash_menu(cod_str, nombre, descripcion, nivel, tipo, orden, activo) 
         //         values ('{$cod_str}', '{$nombre}', '{$nombre}', 3, 'link', {$orden},   true   )");
         // }
-                   
+             
+        $mensaje =  'ok' .  (($user->permisos_abm == 'true') ? "_success" : "_access" );     
         return response()->json([
-            'mensaje' => 'ok'.   $user->permisos_abm ? "_success" : "_access",
+            'mensaje' => $mensaje,
             'nodosMenu'=> $nodosMenu,
         ]);
     }

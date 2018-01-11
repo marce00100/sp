@@ -394,7 +394,7 @@ $("#btnhide").click(function(){
         },
         creaMenuBaseHtml : function(){
             $.get('/api/modulopriorizacion/menustablero', function(res){
-                ctxG.nodos = res.nodosMenu;
+                ctxG.nodos = res.nodosMenu;                
                 for(i=0; i< ctxG.nodos.length; i++ )
                 {
                     var menu = ctxG.nodos[i];
@@ -407,8 +407,8 @@ $("#btnhide").click(function(){
                                 </a>';
                     $("#menuPrincipal").append(html);
                 }
-
                 ctxM.menuDetalle.addClass(cnf.m.bgSub);
+                ctxC.ocultaMuestra(res.mensaje.split('_')[1]);
             })                     
         },
         crearSubmenusHtml : function(itemSel){
@@ -1065,6 +1065,7 @@ $(function(){
 
 
     /* Click Boton de vista usuario Admin , usuariop normal
+    TODO QUITAR function click  y volver el botton span 
     */
     $("#btn_vista_Usuario").click(function(){
         ctxC.ocultaMuestra();

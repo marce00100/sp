@@ -46,9 +46,9 @@ class TableroController extends Controller
         $user = \Auth::user();
         $id_rol = $user->id_rol;
         $listaMenus = collect(\DB::select("SELECT m.id, m.cod_str, m.nombre,  m.descripcion, 
-                                            m.nivel, m.tipo, m.orden, c.variable_estadistica, c.configuracion
+                                            m.nivel, m.tipo, m.orden, m.id_dash_config  --, c.variable_estadistica, c.configuracion
                                             FROM  dash_menu m JOIN dash_menu_rol mr ON m.id = mr.id_dash_menu  AND m.activo AND mr.id_rol = {$id_rol}
-                                            LEFT JOIN dash_config c ON m.id_dash_config = c.id
+                                            -- LEFT JOIN dash_config c ON m.id_dash_config = c.id
                                             ORDER BY m.cod_str
                                 "));
 
@@ -103,25 +103,39 @@ class TableroController extends Controller
         //         values ('{$cod_str}', '{$nombre}', '{$nombre}', 3, 'link', {$orden},   true   )");
         // }
              
-        $mensaje =  'ok' .  (($user->permisos_abm == 'true') ? "_success" : "_access" );     
         return response()->json([
-            'mensaje' => $mensaje,
+            'mensaje' => 'ok' .  (($user->permisos_abm == 'true') ? "_success" : "_access"  ),
+            'perabm' => $user->permisos_abm,
             'nodosMenu'=> $nodosMenu,
         ]);
     }
 
-
-    public function datosVariableEstadistica(Request $req)
+    /**
+     * Obtiene el dash_config -> configuracion del menu 
+     * @param  Request $req = {id_dash_config : id}
+     * @return object con la configuracion y los datos vinculados a este
+     */
+    public function datosVariableEstadistica(Request $req) 
     {
-        $id_indicador = $req->id_indicador;
-        $variable_estadistica = $req->variable_estadistica;
-        $tabla_vista = $req->tabla_vista;
-        $campo_agregacion = $req->campo_agregacion;
-        $condicion_sql = $req->condicion_sql;
+        $id_dash_config = $req->id_dash_config;
+        $configs = collect(\DB::select("SELECT  * FROM dash_config WHERE  id = {$id_dash_config} "));
+
+        if($configs->count() <= 0)
+            return response()->json(['mensaje'=> "No existe una configuracion con  id_dash_config aosciado actualmente al menu "]);
+
+        $config = $configs->first();
+        $obj =  json_decode($config->configuracion);
+
+
+        $id_indicador           = $obj->id_indicador;
+        $variable_estadistica   = $obj->variable_estadistica;
+        $tabla_vista            = $obj->tabla_vista;
+        $campo_agregacion       = $obj->campo_agregacion;
+        $condicion_sql          = $obj->condicion_sql;
         // Obtiene los campos con sus alias
-        $campos_disponibles_select = implode(', ', $req->campos_disponibles);
+        $campos_disponibles_select = implode(', ', $obj->campos_disponibles);
         // Para el group by se le quitan los alias
-        $campos_originales_groupby = collect($req->campos_disponibles)
+        $campos_originales_groupby = collect($obj->campos_disponibles)
                                 ->map(function($item, $key){
                                     return stripos($item, ' as ') ?  substr($item, 0, stripos($item, ' as ')) : $item;
                                 })->implode(', ');
@@ -167,10 +181,72 @@ class TableroController extends Controller
                     'unidad_medida' => $unidadesMedida,
                     // 'indicador' => $indicador,
                     // 'metas'     => $metasPeriodo,
-                    'query'     => $query
+                    'query'     => $query,
+                    'configuracionObj' => $obj
         ]);
 
     }
+
+    // public function datosVariableEstadistica(Request $req)
+    // {
+    //     $id_indicador = $req->id_indicador;
+    //     $variable_estadistica = $req->variable_estadistica;
+    //     $tabla_vista = $req->tabla_vista;
+    //     $campo_agregacion = $req->campo_agregacion;
+    //     $condicion_sql = $req->condicion_sql;
+    //     // Obtiene los campos con sus alias
+    //     $campos_disponibles_select = implode(', ', $req->campos_disponibles);
+    //     // Para el group by se le quitan los alias
+    //     $campos_originales_groupby = collect($req->campos_disponibles)
+    //                             ->map(function($item, $key){
+    //                                 return stripos($item, ' as ') ?  substr($item, 0, stripos($item, ' as ')) : $item;
+    //                             })->implode(', ');
+
+    //     $qrySelect = $qryCondicion = $qryGroupBy = '';
+
+    //     $tablas = collect(\DB::connection("dbestadistica")->select("select table_name from information_schema.tables 
+    //                             where table_schema='public' and table_type='VIEW'
+    //                             and table_name ilike '%{$tabla_vista}%' "));
+    //     if($tablas->count()<=0)
+    //        return response()->json([ 'mensaje' => "No existe ninguna tabla o vista que coincida con {$tabla_vista}"]) ;
+
+    //     $tabla = $tablas->first()->table_name;
+
+    //     $qrySelect = "SELECT {$campos_disponibles_select}, SUM( {$campo_agregacion} ) AS valor
+    //                 FROM {$tabla} 
+    //                 WHERE 1 = 1 " ; 
+
+    //     $qryCondicion = trim($condicion_sql) == '' ? '' : ' AND ' . $condicion_sql . ' ' ;
+
+    //     $qryGroupBy = " GROUP BY {$campos_originales_groupby} ";
+    //           // ORDER BY t_ano, {$campos_disponibles} " ;
+
+    //     $query = $qrySelect . $qryCondicion . $qryGroupBy;
+    //     $collection  =   collect(\DB::connection('dbestadistica')->select($query));      
+
+    //     $unidadesMedida = collect(\DB::connection('dbestadistica')->select("
+    //                         SELECT valor_unidad_medida, valor_defecto_um, valor_tipo FROM {$tabla} LIMIT 1"))->first();
+
+    //     // $indicador = collect(\DB::connection('pgsql')->select("
+    //     //             SELECT * FROM spie_indicadores where id = {$id_indicador} "))->first();
+
+    //     // $metasPeriodo = collect(\DB::connection('pgsql')->select("
+    //     //             SELECT to_char(fecha, 'YYYY')::int as gestion, meta_del_periodo 
+    //     //             FROM spie_indicadores_metas 
+    //     //             WHERE id_indicador = {$id_indicador}
+    //     //             ORDER BY fecha"));
+        
+
+    //     return Response()->json([ 
+    //                 'mensaje'   => 'ok',
+    //                 'collection'=> $collection,
+    //                 'unidad_medida' => $unidadesMedida,
+    //                 // 'indicador' => $indicador,
+    //                 // 'metas'     => $metasPeriodo,
+    //                 'query'     => $query
+    //     ]);
+
+    // }
 
 
     public function datosIndicadoresMeta(Request $req)

@@ -31,6 +31,32 @@
       thousandsSep: ".",
       decimalSep: ","
     });
+
+    tpl.lili = function(formatter) {
+        if (formatter == null) {
+            formatter = usFmt;
+        }
+        return function(arg) {
+            console.log(arg)
+            var attr;
+            attr = arg[0];
+            return function(data, rowKey, colKey) {
+                return {
+                    sum: 0,
+                    push: function(record) {
+                      if (!isNaN(parseFloat(record[attr]))) {
+                        return this.sum += parseFloat(record[attr]);
+                      }
+                    },
+                    value: function() {
+                      return this.sum;
+                    },
+                    format: formatter,
+                    numInputs: attr != null ? 0 : 1
+                };
+            };
+        };
+    };
     return $.pivotUtilities.locales.es = {
       localeStrings: {
         renderError: "Ocurrió un error durante la interpretación de la tabla dinámica.",
@@ -55,16 +81,19 @@
         "Promedio": tpl.average(frFmt),
         "Mínimo": tpl.min(frFmt),
         "Máximo": tpl.max(frFmt),
-        "Suma de sumas": tpl.sumOverSum(frFmt),
+        "Indice  sum(a) / sum(b)": tpl.sumOverSum(frFmt),
         "Cota 80% superior": tpl.sumOverSumBound80(true, frFmt),
         "Cota 80% inferior": tpl.sumOverSumBound80(false, frFmt),
-        "% participación en columna (suma)": tpl.fractionOf(tpl.sum(), "col", frFmtPct),
-        "% participación en fila (suma)": tpl.fractionOf(tpl.sum(), "row", frFmtPct),
-        "% participación del total (suma)": tpl.fractionOf(tpl.sum(), "total", frFmtPct),
+        "% part. en columna (suma)": tpl.fractionOf(tpl.sum(), "col", frFmtPct),
+        "% part. en fila (suma)": tpl.fractionOf(tpl.sum(), "row", frFmtPct),
+        "% part. del total (suma)": tpl.fractionOf(tpl.sum(), "total", frFmtPct),
         
         // "% participación del total (cuenta)": tpl.fractionOf(tpl.count(), "total", frFmtPct),
         // "% participación en fila (cuenta)": tpl.fractionOf(tpl.count(), "row", frFmtPct),
         // "% participación en columna (cuenta)": tpl.fractionOf(tpl.count(), "col", frFmtPct)
+        
+        "haber de prueba" : tpl.lili(frFmt),
+        "suma valor" : function(){ return tpl.sum(frFmtInt)(['valor']) }
       },
       renderers: {
         "Tabla": $.pivotUtilities.renderers["Table"],

@@ -103,8 +103,6 @@
             {{--  ===============================          Pantalla de inicio  ========================--}}
             <div id="vistaInicio" style="width: 100%; height: 750px; background: white; overflow: hidden; position: relative;" >
                 <img src="/img/spie-ico.png" style=" opacity: 0.1; width: 80%; margin: 100px 0 0 200px ; position: absolute;"> 
-            
-                   
             </div>
 
             <div id="contenedor" hidden="">
@@ -272,13 +270,6 @@
 
 {{-- *********************  MAIN APP ************************ --}}
 <script type="text/javascript">
-co = 1;
-$("#btnhide").click(function(){
-    // if(co % 2 == 0)
-        $("#loading").attr("hidden", (co % 2 == 0) );
-        co++;
-})
-
     /*-----------------------------------------------------------------------
      *      cnf variables de configuracion  del modulo, como coleres, iconos y otros
      */
@@ -408,7 +399,7 @@ $("#btnhide").click(function(){
                     $("#menuPrincipal").append(html);
                 }
                 ctxM.menuDetalle.addClass(cnf.m.bgSub);
-                ctxC.ocultaMuestra(res.mensaje.split('_')[1]);
+                ctxC.workspace(res.mensaje.split('_')[1]);
             })                     
         },
         crearSubmenusHtml : function(itemSel){
@@ -435,7 +426,7 @@ $("#btnhide").click(function(){
                             htmlContent += "<div class='list-group-item " + cnf.m.bgTituloSub + " ' >" + elem.nombre + "</div>";
                         else if (elem.tipo == 'link')
                         {
-                            htmlContent += "<a class='list-group-item nodo_menu bg-white " + ((elem.configuracion) ? "" : "disabled" ) + " ' href='#'  id='" + elem.cod_str + "' >" + elem.nombre + ((elem.configuracion)? "<i class='fa fa-tags  pull-right'></i>" : "" ) + "</a>" ;
+                            htmlContent += "<a class='list-group-item nodo_menu bg-white " + ((elem.id_dash_config) ? "" : "disabled" ) + " ' href='#'  id='" + elem.cod_str + "' >" + elem.nombre + ((elem.id_dash_config)? "<i class='fa fa-tags  pull-right'></i>" : "" ) + "</a>" ;
                         }
                     }
                     htmlContent += "</ul></div>";
@@ -523,10 +514,21 @@ $("#btnhide").click(function(){
             }
             return objVE;
         },    
-        obtenerData: function(varEst){
-            objRequest = ctxC.crearRequest(varEst);
+
+        obtenerData: function(nodoSel){
+            // objRequest = ctxC.crearRequest(varEst);
             ctxC.showLoading(1);
-            $.post('/api/modulopriorizacion/datosVariableEstadistica', objRequest, function(res){                
+            $.post('/api/modulopriorizacion/datosVariableEstadistica', 
+                    {
+                        id_dash_config: nodoSel.id_dash_config, 
+                        _token : $('input[name=_token]').val(),
+                    }, function(res){   
+
+                ctxG.varEstActual = res.configuracionObj;
+                ctxG.set_predef_actual = ctxG.varEstActual.sets_predefinidos[0]; // por defecto el primero
+                ctxG.set_predef_actual.index = 0;
+                ctxC.actualizaTitulos();
+                ctxC.cargarHTMLPredefinidos(ctxG.varEstActual);   
                 ctxG.collection = res.collection;
                 ctxG.varEstActualUnidades.valor_unidad_medida = res.unidad_medida.valor_defecto_um;
                 ctxG.varEstActualUnidades.valor_tipo = res.unidad_medida.valor_tipo;
@@ -544,6 +546,28 @@ $("#btnhide").click(function(){
                 
             })
         },
+
+        // obtenerData: function(nodoSel){
+        //     objRequest = ctxC.crearRequest(varEst);
+        //     ctxC.showLoading(1);
+        //     $.post('/api/modulopriorizacion/datosVariableEstadistica', objRequest, function(res){                
+        //         ctxG.collection = res.collection;
+        //         ctxG.varEstActualUnidades.valor_unidad_medida = res.unidad_medida.valor_defecto_um;
+        //         ctxG.varEstActualUnidades.valor_tipo = res.unidad_medida.valor_tipo;
+        //         $.get('/api/modulopriorizacion/datosIndicadoresMeta', {id_indicador : ctxG.varEstActual.id_indicador}, function(r){
+        //             if(r.mensaje=='ok')
+        //             {
+        //                 ctxG.indicadorActual = r.indicador;
+        //                 ctxG.indicadorActual.metas = r.metasIndicador
+        //             }
+        //             else
+        //                 ctxG.indicadorActual = {};
+        //             ctxC.mostrarData(ctxG.collection);
+        //             ctxC.showLoading(0)
+        //         } )
+                
+        //     })
+        // },
         mostrarData: function(collection){
             ctxPiv.pivottableUI();
             ctxGra.colocarOpcionesPredefinidas();
@@ -574,7 +598,7 @@ $("#btnhide").click(function(){
             //     ctxC.contenedorDatos.hide();
             // }
         },  
-        ocultaMuestra: function (usr = '') {
+        workspace: function (usr = '') {
             if(usr=='success') ocultar = false;
             if(usr=='access') ocultar = true;
             if(usr=='')
@@ -588,7 +612,6 @@ $("#btnhide").click(function(){
             $("#btn_vista_Usuario i").addClass( ocultar ? 'fa-user' : 'fa-user-plus');      
         },
         showLoading : function(op){
-            // mostrarLoading =  ? true : false;
             $("#vistaInicio").attr('hidden', true);
             $("#loading").attr('hidden', ( op == 0) );
             $("#contenedor").attr('hidden', ( op == 1 ) );
@@ -646,8 +669,7 @@ $("#btnhide").click(function(){
                     _.mapObject(ctxG.pivotInstancia.inclusions,function(val, key){
                         val.map(function(elem){
                             filtro.push(key + " = '" + elem + "'");
-                        }) 
-                        
+                        })                         
                     })
                     return filtro;
                 })(),
@@ -729,9 +751,8 @@ $("#btnhide").click(function(){
                     ctxG.pivotInstancia = p;
                     ctxPiv.trnDatosDePivot();
                     ctxGra.graficarH();
-                    ctxPiv.pivottableUIRead(p)
-                    // ctxC.ocultaMuestra();
-                    console.log(ctxG)
+                    // ctxPiv.pivottableUIRead(p)
+                    console.log(ctxG);
                 }
             }, true, "es");
         }, 
@@ -966,18 +987,13 @@ $("#btnhide").click(function(){
                             enabled: true,
                             format: '{point.category}'
                         }
-                    },
-                    
+                    },                    
                 },
-
                 series : ctxG.pivot.dataGraph.series, 
             }
             $('#divChart').highcharts(json);
-
         }
     }
-
-
 
 </script>
 
@@ -1005,14 +1021,13 @@ $(function(){
         }
         else
         {
-            ctxG.varEstActual = jQuery.parseJSON(ctxG.nodoSel.configuracion);
-            ctxG.set_predef_actual = ctxG.varEstActual.sets_predefinidos[0]; // por defecto el primero
-            ctxG.set_predef_actual.index = 0;
-            ctxC.actualizaTitulos();
-            ctxC.cargarHTMLPredefinidos(ctxG.varEstActual);  
-            // ctxC.showLoading(1)        
-            ctxC.obtenerData(ctxG.varEstActual);
-            // ctxC.showLoading(0)  
+            ctxC.obtenerData(ctxG.nodoSel);
+            // ctxG.varEstActual = jQuery.parseJSON(ctxG.nodoSel.configuracion);
+            // ctxG.set_predef_actual = ctxG.varEstActual.sets_predefinidos[0]; // por defecto el primero
+            // ctxG.set_predef_actual.index = 0;
+            // ctxC.actualizaTitulos();
+            // ctxC.cargarHTMLPredefinidos(ctxG.varEstActual);    
+            // ctxC.obtenerData(ctxG.varEstActual);
             ctxC.mostrarPantallas('grafico');
         }
     }); 
@@ -1024,9 +1039,7 @@ $(function(){
         ctxG.set_predef_actual = ctxG.varEstActual.sets_predefinidos[index];
         ctxG.set_predef_actual.index = index;
         ctxC.actualizaTitulos();
-        // ctxC.showLoading(1) 
         ctxC.mostrarData(ctxG.collection);
-        // ctxC.showLoading(0) 
     });
 
     /* Click sobre los botones de mostrar tabla o grafico o geo
@@ -1068,13 +1081,12 @@ $(function(){
     TODO QUITAR function click  y volver el botton span 
     */
     $("#btn_vista_Usuario").click(function(){
-        ctxC.ocultaMuestra();
+        ctxC.workspace();
 
     })
 
 
 });
-
 
 </script>
 

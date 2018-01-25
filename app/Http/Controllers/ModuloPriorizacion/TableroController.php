@@ -52,7 +52,7 @@ class TableroController extends Controller
                                             ORDER BY m.cod_str
                                 "));
 
-        $nodosMenu = $listaMenus->where('nivel',1)->sortBy('cod_str')->values();
+        $nodosMenu = $listaMenus->where('nivel',1)->sortBy('orden')->values();
 
         foreach ($nodosMenu as $nivel1) {
             $codigo = $nivel1->cod_str;

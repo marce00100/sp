@@ -128,6 +128,8 @@ _a_ = function() {
                 }
               },
               value: function() {
+                // this['rowKey'] = rowKey;
+                // this['colKey'] = colKey;
                 return this.sum;
               },
               format: formatter,

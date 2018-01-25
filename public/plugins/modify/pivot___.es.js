@@ -30,33 +30,7 @@
       suffix: "%",
       thousandsSep: ".",
       decimalSep: ","
-    });
-
-    tpl.lili = function(formatter) {
-        if (formatter == null) {
-            formatter = usFmt;
-        }
-        return function(arg) {
-            console.log(arg)
-            var attr;
-            attr = arg[0];
-            return function(data, rowKey, colKey) {
-                return {
-                    sum: 0,
-                    push: function(record) {
-                      if (!isNaN(parseFloat(record[attr]))) {
-                        return this.sum += parseFloat(record[attr]);
-                      }
-                    },
-                    value: function() {
-                      return this.sum;
-                    },
-                    format: formatter,
-                    numInputs: attr != null ? 0 : 1
-                };
-            };
-        };
-    };
+    });    
     return $.pivotUtilities.locales.es = {
       localeStrings: {
         renderError: "Ocurrió un error durante la interpretación de la tabla dinámica.",
@@ -90,10 +64,8 @@
         
         // "% participación del total (cuenta)": tpl.fractionOf(tpl.count(), "total", frFmtPct),
         // "% participación en fila (cuenta)": tpl.fractionOf(tpl.count(), "row", frFmtPct),
-        // "% participación en columna (cuenta)": tpl.fractionOf(tpl.count(), "col", frFmtPct)
-        
-        "haber de prueba" : tpl.lili(frFmt),
-        "suma valor" : function(){ return tpl.sum(frFmtInt)(['valor']) }
+        // "% participación en columna (cuenta)": tpl.fractionOf(tpl.count(), "col", frFmtPct)        
+
       },
       renderers: {
         "Tabla": $.pivotUtilities.renderers["Table"],
